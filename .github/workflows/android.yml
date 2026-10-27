@@ -1,7 +1,9 @@
 name: Android build
 
 on:
+  # PR branches are built by the pull_request event; push only covers main.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
