@@ -13,8 +13,11 @@ data class PortfolioUiState(
     val loading: Boolean = true,
     val holdings: List<Holding> = emptyList(),
 ) {
-    val totalInvested: Double get() = holdings.sumOf { it.investedAmount }
-    val totalValue: Double get() = holdings.sumOf { it.currentValue ?: it.investedAmount }
+    val totalInvested: Double get() = holdings.sumOf { it.investedAmount ?: 0.0 }
+    val totalValue: Double get() = holdings.sumOf { it.currentValue ?: it.investedAmount ?: 0.0 }
+
+    /** Gain over the holdings whose cost and value are both known. */
+    val totalGain: Double get() = holdings.sumOf { it.gain ?: 0.0 }
 }
 
 class PortfolioViewModel(repository: PortfolioRepository) : ViewModel() {

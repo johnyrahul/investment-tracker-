@@ -54,7 +54,9 @@ kotlin {
 
 dependencies {
     implementation(project(":core:data"))
+    implementation(project(":core:sync"))
     implementation(project(":feature:portfolio"))
+    implementation(project(":feature:import"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

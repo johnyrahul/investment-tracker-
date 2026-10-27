@@ -14,10 +14,9 @@ object HoldingsCalculator {
         latestPrices: Map<String, Double>,
     ): List<Holding> =
         transactions
-            .groupBy { it.isin to it.platform }
+            .groupBy { it.isin to it.account }
             .mapNotNull { (key, txns) ->
-                val (isin, platform) = key
-                val instrument = instruments[isin] ?: return@mapNotNull null
+                val instrument = instruments[key.first] ?: return@mapNotNull null
                 var units = 0.0
                 var invested = 0.0
                 for (txn in txns.sortedBy { it.date }) {
@@ -31,7 +30,7 @@ object HoldingsCalculator {
                     }
                 }
                 if (units <= EPSILON) return@mapNotNull null
-                Holding(instrument, platform, units, invested, latestPrices[isin])
+                Holding(instrument, txns.first().platform, units, invested, latestPrices[key.first], key.second)
             }
             .sortedByDescending { it.currentValue ?: it.investedAmount }
 }

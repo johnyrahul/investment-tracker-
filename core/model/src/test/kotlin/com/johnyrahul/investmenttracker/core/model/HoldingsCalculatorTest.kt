@@ -29,8 +29,8 @@ class HoldingsCalculatorTest {
         )
         val h = holdings.single()
         assertEquals(20.0, h.units, 1e-9)
-        assertEquals(2200.0, h.investedAmount, 1e-9)
-        assertEquals(110.0, h.averageCost, 1e-9)
+        assertEquals(2200.0, h.investedAmount!!, 1e-9)
+        assertEquals(110.0, h.averageCost!!, 1e-9)
         assertEquals(400.0, h.gain!!, 1e-9)
     }
 
@@ -42,7 +42,7 @@ class HoldingsCalculatorTest {
             emptyMap(),
         ).single()
         assertEquals(6.0, h.units, 1e-9)
-        assertEquals(600.0, h.investedAmount, 1e-9)
+        assertEquals(600.0, h.investedAmount!!, 1e-9)
     }
 
     @Test

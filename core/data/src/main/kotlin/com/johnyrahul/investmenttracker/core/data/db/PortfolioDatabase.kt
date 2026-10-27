@@ -9,8 +9,16 @@ import com.johnyrahul.investmenttracker.core.data.security.DatabaseKeyManager
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
-    entities = [InstrumentEntity::class, TransactionEntity::class, PriceEntity::class],
-    version = 1,
+    entities = [
+        InstrumentEntity::class,
+        TransactionEntity::class,
+        PriceEntity::class,
+        SnapshotEntity::class,
+        StatementEntity::class,
+        GmailMessageEntity::class,
+        SettingEntity::class,
+    ],
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -18,6 +26,10 @@ abstract class PortfolioDatabase : RoomDatabase() {
     abstract fun instrumentDao(): InstrumentDao
     abstract fun transactionDao(): TransactionDao
     abstract fun priceDao(): PriceDao
+    abstract fun snapshotDao(): SnapshotDao
+    abstract fun statementDao(): StatementDao
+    abstract fun gmailMessageDao(): GmailMessageDao
+    abstract fun settingDao(): SettingDao
 
     companion object {
         private const val NAME = "portfolio.db"
@@ -32,6 +44,8 @@ abstract class PortfolioDatabase : RoomDatabase() {
             val passphrase = DatabaseKeyManager(context).getOrCreatePassphrase()
             return Room.databaseBuilder(context, PortfolioDatabase::class.java, NAME)
                 .openHelperFactory(SupportOpenHelperFactory(passphrase))
+                // Version 1 had no importer, so its tables were always empty.
+                .fallbackToDestructiveMigrationFrom(true, 1)
                 .build()
         }
     }

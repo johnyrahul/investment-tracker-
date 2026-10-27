@@ -10,9 +10,9 @@ data class Instrument(
     val isin: String,
     val name: String,
     val type: AssetType,
-    /** AMFI scheme code for mutual funds; used later for daily NAV refresh. */
+    /** AMFI scheme code for mutual funds; filled in by the daily NAV refresh. */
     val amfiCode: String? = null,
-    /** NSE/BSE symbol for stocks; used later for price refresh. */
+    /** NSE/BSE symbol for stocks; filled in by the daily price refresh. */
     val symbol: String? = null,
 )
 
@@ -20,6 +20,8 @@ data class Transaction(
     val id: Long = 0,
     val isin: String,
     val platform: Platform,
+    /** Folio number for mutual fund folios, DP/BO id for demat accounts. */
+    val account: String = "",
     val date: LocalDate,
     val type: TransactionType,
     val units: Double,
@@ -27,15 +29,38 @@ data class Transaction(
     val amount: Double = units * pricePerUnit,
 )
 
-/** Current position in one instrument on one platform, derived from transactions. */
+/**
+ * Units held in one instrument in one account as reported by a statement on [asOf].
+ * Statements always report closing balances, so the newest snapshot is the source of truth
+ * for units; transactions are kept for XIRR and tax insights.
+ */
+data class PositionSnapshot(
+    val isin: String,
+    val account: String,
+    val platform: Platform,
+    val category: HoldingCategory,
+    val asOf: LocalDate,
+    val units: Double,
+    /** Total purchase cost of the units, when the statement reports it. */
+    val costValue: Double?,
+    /** NAV / market price on [asOf], when the statement reports it. */
+    val price: Double?,
+)
+
+data class PricePoint(val isin: String, val date: LocalDate, val price: Double)
+
+/** Current position in one instrument in one account. */
 data class Holding(
     val instrument: Instrument,
     val platform: Platform,
     val units: Double,
-    val investedAmount: Double,
+    /** Null when no imported statement reports the purchase cost. */
+    val investedAmount: Double?,
     val latestPrice: Double?,
+    val account: String = "",
+    val asOf: LocalDate? = null,
 ) {
-    val averageCost: Double get() = if (units > 0) investedAmount / units else 0.0
+    val averageCost: Double? get() = investedAmount?.let { if (units > 0) it / units else 0.0 }
     val currentValue: Double? get() = latestPrice?.let { it * units }
-    val gain: Double? get() = currentValue?.minus(investedAmount)
+    val gain: Double? get() = currentValue?.let { value -> investedAmount?.let { value - it } }
 }
