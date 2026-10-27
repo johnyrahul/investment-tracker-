@@ -21,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.johnyrahul.investmenttracker.core.model.AssetType
 import com.johnyrahul.investmenttracker.core.model.Holding
+import com.johnyrahul.investmenttracker.core.model.Platform
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -41,7 +43,7 @@ fun PortfolioScreen(state: PortfolioUiState, modifier: Modifier = Modifier) {
         }
         state.holdings.isEmpty() -> Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
             Text(
-                "No holdings yet.\nImport from your CAS statement is coming next.",
+                "No holdings yet.\nTap Import to add your CAS statement.",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyLarge,
             )
@@ -52,7 +54,7 @@ fun PortfolioScreen(state: PortfolioUiState, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { Summary(state) }
-            items(state.holdings, key = { "${it.instrument.isin}-${it.platform}" }) { HoldingRow(it) }
+            items(state.holdings, key = { "${it.instrument.isin}-${it.account}" }) { HoldingRow(it) }
         }
     }
 }
@@ -64,6 +66,18 @@ private fun Summary(state: PortfolioUiState) {
             Text("Current value", style = MaterialTheme.typography.labelMedium)
             Text(inr.format(state.totalValue), style = MaterialTheme.typography.headlineMedium)
             Text("Invested ${inr.format(state.totalInvested)}", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "Gain ${inr.format(state.totalGain)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (state.totalGain >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+            )
+            val unknownCost = state.holdings.count { it.investedAmount == null }
+            if (unknownCost > 0) {
+                Text(
+                    "Purchase cost unknown for $unknownCost holdings (depository statements don't include it)",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
 }
@@ -74,10 +88,10 @@ private fun HoldingRow(holding: Holding) {
         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
                 Text(holding.instrument.name, style = MaterialTheme.typography.titleSmall)
-                Text(holding.platform.displayName, style = MaterialTheme.typography.bodySmall)
+                Text(holding.subtitle(), style = MaterialTheme.typography.bodySmall)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(inr.format(holding.currentValue ?: holding.investedAmount))
+                (holding.currentValue ?: holding.investedAmount)?.let { Text(inr.format(it)) }
                 holding.gain?.let {
                     Text(
                         inr.format(it),
@@ -89,3 +103,14 @@ private fun HoldingRow(holding: Holding) {
         }
     }
 }
+
+private fun Holding.subtitle(): String = buildList {
+    if (platform != Platform.OTHER) add(platform.displayName)
+    if (instrument.type == AssetType.MUTUAL_FUND && account.any(Char::isDigit) && account.length < 16) {
+        add("Folio $account")
+    }
+    add("${units.formatUnits()} ${if (instrument.type == AssetType.STOCK) "shares" else "units"}")
+}.joinToString(" · ")
+
+private fun Double.formatUnits(): String =
+    if (this % 1.0 == 0.0) toLong().toString() else "%.3f".format(this)

@@ -28,6 +28,7 @@ ksp {
 
 dependencies {
     api(project(":core:model"))
+    api(project(":core:parsing"))
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
